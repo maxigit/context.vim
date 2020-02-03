@@ -10,29 +10,50 @@ function! context#activate() abort
     call context#update('activate')
 endfunction
 
-function! context#enable() abort
-    let g:context.enabled = 1
+function! context#enable(arg) abort
+    if a:arg == 'window'
+        let w:context.enabled = 1
+    else
+        let g:context.enabled = 1
+    endif
+
     unlet! w:context " clear stale cache
     call context#update('enable')
 endfunction
 
-function! context#disable() abort
-    let g:context.enabled = 0
+function! context#disable(arg) abort
+    if a:arg == 'window'
+        let w:context.enabled = 0
+    else
+        let g:context.enabled = 0
+    endif
 
     if g:context.presenter == 'preview'
         call context#preview#close()
     else
-        call context#popup#clear()
+        if a:arg == 'window'
+            call context#popup#close()
+        else
+            call context#popup#clear()
+        endif
     endif
 endfunction
 
-function! context#toggle() abort
-    if g:context.enabled
-        call context#disable()
-        echom 'context.vim: disabled'
+function! context#toggle(arg) abort
+    if a:arg == 'window'
+        let arg = 'window'
+        let enabled = w:context.enabled
     else
-        call context#enable()
-        echom 'context.vim: enabled'
+        let arg = 'all'
+        let enabled = g:context.enabled
+    endif
+
+    if enabled
+        call context#disable(arg)
+        echom 'context.vim: disabled' arg
+    else
+        call context#enable(arg)
+        echom 'context.vim: enabled' arg
     endif
 endfunction
 
@@ -41,19 +62,9 @@ function! context#update(...) abort
     " for compatibility reasons we still allow multiple arguments
     let source = a:000[-1]
 
-    if 0
-                \ || !s:activated
-                \ || s:ignore_update
-                \ || &previewwindow
-                \ || mode() != 'n'
-                \ || !context#util#active()
-        return
-    endif
-
-    let winid = win_getid()
-
     if !exists('w:context')
         let w:context = {
+                    \ 'enabled':       1,
                     \ 'lines_top':     [],
                     \ 'lines_bottom':  [],
                     \ 'pos_y':         0,
@@ -69,6 +80,17 @@ function! context#update(...) abort
                     \ 'cursor_line':   0,
                     \ }
     endif
+
+    if 0
+                \ || !s:activated
+                \ || s:ignore_update
+                \ || &previewwindow
+                \ || mode() != 'n'
+                \ || !context#util#active()
+        return
+    endif
+
+    let winid = win_getid()
 
     call context#util#update_state()
     call context#util#update_window_state(winid)

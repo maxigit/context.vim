@@ -1,4 +1,5 @@
 let s:context_buffer_name = '<context.vim>'
+let s:popups = {}
 
 function! context#popup#update_context() abort
     let [lines_top, lines_bottom, indent] = context#popup#get_context(w:context.top_line)
@@ -153,6 +154,7 @@ function! context#popup#redraw(winid, force) abort
     endif
 endfunction
 
+" close all popups
 function! context#popup#clear() abort
     for key in keys(s:popups)
         call s:close(s:popups[key])
@@ -160,7 +162,17 @@ function! context#popup#clear() abort
     let s:popups = {}
 endfunction
 
-let s:popups = {}
+" close current popup
+function! context#popup#close() abort
+    let winid = win_getid()
+    let popup = get(s:popups, winid)
+    if popup == 0
+        return
+    endif
+
+    call s:close(popup)
+    call remove(s:popups, winid)
+endfunction
 
 " popup related
 function! s:show() abort
