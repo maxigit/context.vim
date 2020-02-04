@@ -11,22 +11,12 @@ function! context#activate() abort
 endfunction
 
 function! context#enable(arg) abort
-    if a:arg == 'window'
-        let w:context.enabled = 1
-    else
-        let g:context.enabled = 1
-    endif
-
-    unlet! w:context " clear stale cache
+    call s:set_enabled(a:arg, 1)
     call context#update('enable')
 endfunction
 
 function! context#disable(arg) abort
-    if a:arg == 'window'
-        let w:context.enabled = 0
-    else
-        let g:context.enabled = 0
-    endif
+    call s:set_enabled(a:arg, 0)
 
     if g:context.presenter == 'preview'
         call context#preview#close()
@@ -64,7 +54,7 @@ function! context#update(...) abort
 
     if !exists('w:context')
         let w:context = {
-                    \ 'enabled':       1,
+                    \ 'enabled':       g:context.enabled,
                     \ 'lines_top':     [],
                     \ 'lines_bottom':  [],
                     \ 'pos_y':         0,
@@ -129,4 +119,19 @@ function! context#update(...) abort
 
         call context#util#log_indent(-2)
     endif
+endfunction
+
+function! s:set_enabled(arg, enabled) abort
+    if a:arg == 'window'
+        let winids = [winnr()] " only current window
+    else
+        let winids = range(1, winnr('$')) " all windows
+        let g:context.enabled = a:enabled
+    endif
+
+    for winid in winids
+        let c = getwinvar(win_getid(winid), 'context', {})
+        let c.enabled = a:enabled
+        let c.top_line = 0 " don't rely on old cache
+    endfor
 endfunction
