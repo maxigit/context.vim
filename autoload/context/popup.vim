@@ -125,7 +125,7 @@ function! context#popup#redraw(winid, force) abort
 
         let lines = c.lines_top
         if len(lines) > 0
-            let lines[-1] = s:get_border_line(a:winid, 1)
+            let lines[-1] = s:get_border_line(a:winid, 0)
             let c.lines_top = lines
         endif
 
